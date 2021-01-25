@@ -29,5 +29,7 @@ namespace WebApplication1.Models
         {
             return new ApplicationDbContext();
         }
+
+        public DbSet<Contact> Contacts { get; set; }
     }
 }
