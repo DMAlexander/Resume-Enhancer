@@ -19,7 +19,8 @@ namespace WebApplication1.Controllers
         [Authorize]
         public ActionResult Index()
         {
-            return View(db.Contacts.ToList());
+            var userId = GetCurrentUserId();
+            return View(db.Contacts.Where(x => x.UserId == userId).ToList());
         }
 
         // GET: Contacts/Details/5
