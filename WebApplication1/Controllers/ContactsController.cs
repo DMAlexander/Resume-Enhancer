@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNet.Identity;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
@@ -15,12 +16,14 @@ namespace WebApplication1.Controllers
         private ApplicationDbContext db = new ApplicationDbContext();
 
         // GET: Contacts
+        [Authorize]
         public ActionResult Index()
         {
             return View(db.Contacts.ToList());
         }
 
         // GET: Contacts/Details/5
+        [Authorize]
         public ActionResult Details(int? id)
         {
             if (id == null)
@@ -36,6 +39,7 @@ namespace WebApplication1.Controllers
         }
 
         // GET: Contacts/Create
+        [Authorize]
         public ActionResult Create()
         {
             return View();
@@ -48,6 +52,7 @@ namespace WebApplication1.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult Create([Bind(Include = "Id,UserId,FirstName,LastName,Email,PhonePrimary,PhoneSecondary,Birthday,StreetAddress1,StreetAddress2,City,State,Zip")] Contact contact)
         {
+            contact.UserId = GetCurrentUserId();
             if (ModelState.IsValid)
             {
                 db.Contacts.Add(contact);
@@ -59,6 +64,7 @@ namespace WebApplication1.Controllers
         }
 
         // GET: Contacts/Edit/5
+        [Authorize]
         public ActionResult Edit(int? id)
         {
             if (id == null)
@@ -66,7 +72,7 @@ namespace WebApplication1.Controllers
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
             Contact contact = db.Contacts.Find(id);
-            if (contact == null)
+            if (contact == null || !EnsureIsUserContact(contact))
             {
                 return HttpNotFound();
             }
@@ -78,8 +84,10 @@ namespace WebApplication1.Controllers
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize]
         public ActionResult Edit([Bind(Include = "Id,UserId,FirstName,LastName,Email,PhonePrimary,PhoneSecondary,Birthday,StreetAddress1,StreetAddress2,City,State,Zip")] Contact contact)
         {
+            contact.UserId = GetCurrentUserId();
             if (ModelState.IsValid)
             {
                 db.Entry(contact).State = EntityState.Modified;
@@ -90,6 +98,7 @@ namespace WebApplication1.Controllers
         }
 
         // GET: Contacts/Delete/5
+        [Authorize]
         public ActionResult Delete(int? id)
         {
             if (id == null)
@@ -97,7 +106,7 @@ namespace WebApplication1.Controllers
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
             Contact contact = db.Contacts.Find(id);
-            if (contact == null)
+            if (contact == null || !EnsureIsUserContact(contact))
             {
                 return HttpNotFound();
             }
@@ -105,6 +114,7 @@ namespace WebApplication1.Controllers
         }
 
         // POST: Contacts/Delete/5
+        [Authorize]
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public ActionResult DeleteConfirmed(int id)
@@ -115,6 +125,7 @@ namespace WebApplication1.Controllers
             return RedirectToAction("Index");
         }
 
+        [Authorize]
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -122,6 +133,16 @@ namespace WebApplication1.Controllers
                 db.Dispose();
             }
             base.Dispose(disposing);
+        }
+
+        public Guid GetCurrentUserId()
+        {
+            return new Guid(User.Identity.GetUserId());
+        }
+
+        private bool EnsureIsUserContact(Contact contact)
+        {
+            return contact.UserId == GetCurrentUserId();
         }
     }
 }
